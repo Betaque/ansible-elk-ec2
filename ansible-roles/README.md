@@ -8,6 +8,7 @@ Ansible Playbook for setting up the ELK Stack on remote hosts
 
 * Remote machine which allow to ssh
 * Ansible installed on control node
+* You need to map the dns with remote host IP where would elk install.
 
 
 ## Command to use this project
@@ -30,11 +31,6 @@ Ansible Playbook for setting up the ELK Stack on remote hosts
 ```bash
   cd ansible-roles/nginx/vars
 ```
-#### kibana dashboard
-Kibana is a browser-based analytics and search dashboard for Elasticsearch. To see its interface, reverse proxy configurations are required which will handle by nginx role.
-
-You need to map the dns with kibana installed machine IP. ```required```
-
 
 ## Command to deploy ELK components
 ```bash
@@ -46,12 +42,12 @@ You need password of elastic user in logstash configuration file.
 
 To get elastic password
 
-* Connect with vm where elk installed
+* Connect with vm where elk installed 
 
 ```
 sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
 ```
-Copy the password from your terminal and paste in custom.conf in output plugin 
+Copy the password from your terminal and paste in custom.conf in output plugin (store password safely)
 ```
 cd /etc/logstash/conf.d
 vim custom.conf
@@ -65,6 +61,15 @@ Let's restart elasticsearch and logstash with
 sudo systemctl restart logstash
 sudo systemctl restart elasticsearch
 ```
+
+## To access kibana dashboard
+
+* Hit on the kibana domain that you mapped
+* Choose option ```configure manually```
+* Reset password for user kibana_system ```sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic```
+* Get verification code by running ```systemctl status kibana```
+* Paste the output in password, tick on checkbox and click on ```configure elastic```
+* It will prompt for elastic user login creds, put and login
 
 
 
