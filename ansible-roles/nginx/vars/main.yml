@@ -1,0 +1,5 @@
+---
+# vars file for nginx
+
+kibana_domain: abc.com
+kibana_password: kibana@#$123

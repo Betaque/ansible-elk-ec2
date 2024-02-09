@@ -1,0 +1,60 @@
+---
+# tasks file for nginx
+- name: Update apt package index
+  become: true
+  apt:
+    update_cache: yes
+
+- name: Install Nginx
+  become: true
+  apt:
+    name: nginx
+    state: present
+
+- name: Add Nginx configuration to the end of the file
+  become: true
+  lineinfile:
+    path: /etc/nginx/sites-available/default
+    line: |
+      server {
+          listen 80;
+          
+          server_name {{ kibana_domain }};
+          
+          
+          location / {
+              proxy_pass http://localhost:5601;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection 'upgrade';
+              proxy_set_header Host $host;
+              proxy_cache_bypass $http_upgrade;
+          }
+      }
+
+- name: restart nginx
+  become: true
+  service:
+    name: nginx
+    state: restarted
+
+# - name: Run htpasswd command with expect
+#   become: true
+#   ansible.builtin.expect:
+#     command: passwd -c /etc/nginx/.htpasswd kibanaadmin
+#     responses:
+#       'New password:': 'kibana@123'
+#       'Re-type new password:': 'kibana@123'
+
+# - name: Create htpasswd file
+#   become: true
+#   htpasswd:
+#     path: /etc/apache2/.htpasswd
+#     name: kibanaadmin
+#     password: "{{ htpasswd_password }}"
+
+# - name: restart nginx
+#   become: true
+#   service:
+#     name: nginx
+#     state: restarted

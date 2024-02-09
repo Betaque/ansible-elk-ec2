@@ -1,0 +1,7 @@
+- name: Setup ELK
+  hosts: vm
+  roles:
+    - elasticsearch
+    - kibana
+    - nginx
+    - logstash

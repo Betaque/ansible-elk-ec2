@@ -1,0 +1,60 @@
+---
+
+- name: Download Kibana deb package
+  get_url:
+    url: "https://artifacts.elastic.co/downloads/kibana/{{ kibana_version }}-amd64.deb"
+    dest: "/tmp/{{ kibana_version }}-amd64.deb"
+
+- name: Verify SHA512 checksum
+  command: "shasum -a 512 /tmp/{{ kibana_version }}-amd64.deb"
+  register: shasum_result
+  ignore_errors: true
+
+- name: Install Kibana using dpkg
+  become: true
+  apt:
+    deb: "/tmp/{{ kibana_version }}-amd64.deb"
+  when: shasum_result.rc == 0
+
+- name: Uncomment server.port in kibana.yml
+  become: true
+  replace:
+    path: /etc/kibana/kibana.yml
+    regexp: '^#server\.port: 5601$'
+    replace: 'server.port: {{ kibana_server_port }}'
+
+# - name: Replace server.host in kibana.yml
+#   become: true
+#   replace:
+#     path: /etc/kibana/kibana.yml
+#     regexp: '^#?server\.host: "localhost"$'
+#     replace: 'server.host: {{ kibana_server_host }}'
+
+# - name: Uncomment elasticsearch.hosts in kibana.yml
+#   become: true
+#   replace:
+#     path: /etc/kibana/kibana.yml
+#     regexp: '^#?elasticsearch\.hosts: \["http://localhost:9200"\]$'
+#     replace: 'elasticsearch.hosts: {{ kibana_elasticsearch_url }}'
+
+# - name: Uncomment elasticsearch.username in kibana.yml
+#   become: true
+#   replace:
+#     path: /etc/kibana/kibana.yml
+#     regexp: '^#?elasticsearch\.username: "kibana_system"$'
+#     replace: 'elasticsearch.username: "kibana_system"'
+
+# - name: Uncomment elasticsearch.password in kibana.yml
+#   become: true
+#   replace:
+#     path: /etc/kibana/kibana.yml
+#     regexp: '^#?elasticsearch\.password: "pass"$'
+#     replace: 'elasticsearch.password: "pass"'
+
+- name: Enable and start kibana service
+  become: true
+  service:
+    name: kibana
+    state: started
+    enabled: yes
+

@@ -1,0 +1,86 @@
+---
+# tasks file for logstash
+
+- name: Download logstash deb package
+  get_url:
+    url: "https://artifacts.elastic.co/downloads/logstash/logstash-8.12.0-amd64.deb"
+    dest: "/tmp/logstash-8.12.0-amd64.deb"
+
+- name: Download SHA512 checksum file
+  get_url:
+    url: "https://artifacts.elastic.co/downloads/logstash/logstash-8.12.0-amd64.deb.sha512"
+    dest: "/tmp/logstash-8.12.0-amd64.deb.sha512"
+
+- name: Verify SHA512 checksum
+  shell: "shasum -a 512 -c /tmp/logstash-8.12.0-amd64.deb.sha512"
+  args:
+    chdir: "/tmp"
+  register: shasum_result
+  ignore_errors: true
+
+- name: Install logstash using dpkg
+  become: true
+  apt:
+    deb: "/tmp/logstash-8.12.0-amd64.deb"
+  when: shasum_result.rc == 0
+
+- name: Enable and start logstash service
+  become: true
+  service:
+    name: logstash
+    state: started
+    enabled: yes
+
+- name: Create Beats Input Output Configuration
+  become: true
+  copy:
+    content: |
+      input {
+        beats {
+          port => 5044
+        }
+      }
+
+      filter {
+      }
+
+      output {
+          elasticsearch {
+          hosts => ["https://elastic:vJRdHf*nu8whn6HAoNu_@localhost:9200"]
+          ssl_enabled => true
+          ssl_certificate_authorities => "/etc/logstash/certs/http_ca.crt"
+          index => "filebeat-8.12.0"
+          }
+      }
+    dest: /etc/logstash/conf.d/custom.conf
+
+- name: Create directory for certificates in logtash
+  become: true
+  file:
+    path: /etc/logstash/certs
+    state: directory
+
+- name: Copy crt from elasticsearch/certs to logstash/certs
+  become: true
+  ansible.builtin.copy:
+    src: /etc/elasticsearch/certs/http_ca.crt
+    dest: /etc/logstash/certs/http_ca.crt
+    mode: '0755'
+    remote_src: true
+# - name: Copy crt from elasticsearch/certs/ to logstash/certs/
+#   become: true
+#   copy:
+#     src: /etc/elasticsearch/certs/http_ca.crt
+#     dest: /etc/logstash/certs/http_ca.crt
+
+# - name: Set permission to http_ca.crt
+#   become: true
+#   file:
+#     path: /etc/logstash/certs/http_ca.crt
+#     mode: '0755'
+
+- name: restart logstash
+  become: true
+  service:
+    name: logstash
+    state: restarted

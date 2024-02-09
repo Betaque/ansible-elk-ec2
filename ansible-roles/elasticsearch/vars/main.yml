@@ -1,0 +1,8 @@
+---
+elasticsearch_version: elasticsearch-8.12.0
+elasticsearch_host: 0.0.0.0
+elasticsearch_port: 9200
+security_enable: 'true'
+elasticsearch_package_state: present
+elasticsearch_service_state: started
+elasticsearch_service_enabled: true

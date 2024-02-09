@@ -1,0 +1,55 @@
+---
+
+- name: Download Elasticsearch deb package
+  get_url:
+    url: "https://artifacts.elastic.co/downloads/elasticsearch/{{ elasticsearch_version }}-amd64.deb"
+    dest: "/tmp/{{ elasticsearch_version }}-amd64.deb"
+
+- name: Download SHA512 checksum file
+  get_url:
+    url: "https://artifacts.elastic.co/downloads/elasticsearch/{{ elasticsearch_version }}-amd64.deb.sha512"
+    dest: "/tmp/{{ elasticsearch_version }}-amd64.deb.sha512"
+
+- name: Verify SHA512 checksum
+  shell: "shasum -a 512 -c /tmp/{{ elasticsearch_version }}-amd64.deb.sha512"
+  args:
+    chdir: "/tmp"
+  register: shasum_result
+  ignore_errors: true
+
+- name: Install Elasticsearch using dpkg
+  become: true
+  apt:
+    deb: "/tmp/{{ elasticsearch_version }}-amd64.deb"
+  when: shasum_result.rc == 0
+
+# Variables are stored in vars directory
+
+- name: Replace network.host in elasticsearch.yml
+  become: true
+  replace:
+    path: /etc/elasticsearch/elasticsearch.yml
+    regexp: '^#?network.host:.*$'
+    replace: 'network.host: {{ elasticsearch_host }}'
+
+- name: Replace http.port in elasticsearch.yml
+  become: true
+  replace:
+    path: /etc/elasticsearch/elasticsearch.yml
+    regexp: '^#?http\.port:.*$'
+    replace: 'http.port: {{ elasticsearch_port }}'
+
+# - name: Replace xpack.security.enabled in elasticsearch.yml
+#   become: true
+#   replace:
+    # path: /etc/elasticsearch/elasticsearch.yml
+    # regexp: '^xpack\.security\.enabled: true$'
+    # replace: 'xpack.security.enabled: false'
+
+- name: Enable and start Elasticsearch service
+  become: true
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+
